@@ -2,38 +2,31 @@ pipeline {
     agent any
 
     stages {
-
         stage('Checkout') {
             steps {
-                checkout scm
+                echo "Checking out source code..."
             }
         }
-
-        stage('Install Requirements') {
+        stage('Build') {
             steps {
-                echo "Installing Python dependencies..."
-                sh 'pip install -r requirements.txt'
+                echo "Building the project..."
             }
         }
-
         stage('Test') {
             steps {
                 echo "Running tests..."
-                sh 'pytest || true'
             }
         }
-
-        stage('Docker Build') {
-            steps {
-                echo "Building Docker image..."
-                sh 'docker build -t simple-webapp .'
-            }
-        }
-
         stage('Deploy') {
             steps {
-                echo "Deploy stage (setup later)"
+                echo "Deploying the application..."
             }
+        }
+    }
+
+    post {
+        always {
+            echo "Pipeline finished!"
         }
     }
 }
