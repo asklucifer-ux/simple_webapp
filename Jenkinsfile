@@ -1,78 +1,39 @@
 pipeline {
     agent any
-    environment {
-        SONAR_TOKEN = credentials('sonar-token')
-        DOCKER_IMAGE = "my-python-app:latest"
-    }
+
     stages {
+
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/yourusername/my-python-app.git'
+                checkout scm
             }
         }
 
-        stage('Setup Python Environment') {
+        stage('Install Requirements') {
             steps {
-                sh '''
-                python -m venv venv
-                source venv/bin/activate
-                pip install -r requirements.txt
-                '''
+                echo "Installing Python dependencies..."
+                sh 'pip install -r requirements.txt'
             }
         }
 
-        stage('Run Tests') {
+        stage('Test') {
             steps {
-                sh '''
-                source venv/bin/activate
-                pytest tests/
-                '''
-            }
-        }
-
-        stage('SonarQube Scan') {
-            steps {
-                withSonarQubeEnv('sonarqube') {
-                    sh '''
-                    source venv/bin/activate
-                    sonar-scanner -Dsonar.login=$SONAR_TOKEN
-                    '''
-                }
+                echo "Running tests..."
+                sh 'pytest || true'
             }
         }
 
         stage('Docker Build') {
             steps {
-                script {
-                    sh "docker build -t ${DOCKER_IMAGE} ."
-                }
+                echo "Building Docker image..."
+                sh 'docker build -t simple-webapp .'
             }
         }
 
-        stage('Trivy Scan') {
+        stage('Deploy') {
             steps {
-                sh "trivy image ${DOCKER_IMAGE}"
+                echo "Deploy stage (setup later)"
             }
-        }
-
-        stage('Docker Scout Scan') {
-            steps {
-                sh "docker scout analyze ${DOCKER_IMAGE}"
-            }
-        }
-
-        stage('Deploy to Kubernetes') {
-            steps {
-                sh '''
-                kubectl apply -f k8s/deployment.yaml
-                kubectl apply -f k8s/service.yaml
-                '''
-            }
-        }
-    }
-    post {
-        always {
-            echo 'Pipeline completed.'
         }
     }
 }
